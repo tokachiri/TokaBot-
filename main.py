@@ -370,4 +370,4 @@ async def h2(ctx):
 
   await ctx.send(embed=fun_help)
 
-bot.run('ODA2OTIxMjAzMjk0MDExNDgz.YBwd7g.04OQA0kGWwdfGEB8aMsWGsCQE5I')
+bot.run('bottoken')
