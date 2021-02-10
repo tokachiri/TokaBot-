@@ -6,6 +6,7 @@ import json
 import os
 import asyncio
 from itertools import cycle
+from io import BytesIO
 
 bot = commands.Bot(command_prefix="t!")
 bot.sniped_messages = {}
@@ -122,19 +123,12 @@ async def purge_error(ctx, error):
 # Anti Bypass
 @bot.listen("on_message")
 async def el_message(message):
-    if message.author.id != 707426973370286171:
-        if f"{bot.user.id}" in message.content:
-            msg = await message.channel.send(
-                "Don't ping TokaBot unless it's important.")
-            await message.delete()
-            await asyncio.sleep(4)
-            await msg.delete()
-        for word in grabify:
-            if word in message.content:
-                await message.channel.purge(limit=1)
-                msg = await message.channel.send(
-                    f"Nobody falls for those grabify links stupid. <@{message.author.id}>"
-                )
+  for word in grabify:
+    if word in message.content:
+      await message.channel.purge(limit=1)
+      msg = await message.channel.send(
+          f"Nobody falls for those grabify links stupid. <@{message.author.id}>"
+          )
 
 # Say Command
 
@@ -142,12 +136,14 @@ async def el_message(message):
 @commands.has_permissions(manage_messages=True)
 async def say(ctx, *, arg):
       await ctx.channel.purge(limit=1)
-      await ctx.send(arg)
+      say_embed = discord.Embed(color=ctx.author.color,)
+      say_embed.add_field(name="Somebody has Said -",value=f"{arg}")
+      await ctx.send(embed=say_embed)
 
 @say.error
 async def say_error(ctx, error):
     if isinstance(error, commands.MissingPermissions):
-        await ctx.send("You cant do that!")
+        await ctx.send("You cant do that!(Missing Permmisions)")
 
 # Rick Roll Command
 
@@ -170,7 +166,7 @@ async def DaleYeah(ctx):
   await ctx.send("https://media.discordapp.net/attachments/779472056949276672/808478079319932968/Yoshi.gif?width=225&height=225")
 
 # Rock Paper Scissors Command
-@bot.command(help="Play with .rps [your choice]")
+@bot.command()
 async def rps(ctx):
     rpsGame = ['rock', 'paper', 'scissors']
     await ctx.send(f"Rock, paper, or scissors? Choose wisely...")
@@ -203,7 +199,7 @@ async def rps(ctx):
         elif comp_choice == 'paper':
             await ctx.send(f'Bruh. >: |\nYour choice: {user_choice}\nMy choice: {comp_choice}')
         elif comp_choice == 'scissors':
-            await ctx.send(f"Oh well, we tied.\nYour choice: {user_choice}\nMy choice: {comp_choice}")
+            await ctx.send(f"Oh well, we tied.\nYour choice: {user_choice}\nMy choice: {comp_choice}")       
 
 # Nick Command
 @bot.command(pass_context=True)
@@ -226,7 +222,7 @@ async def slowmode(ctx, seconds: int):
 # Ban Command
 @bot.command()
 @commands.has_permissions(ban_members = True)
-async def ban (ctx, member:discord.User=None, reason =None):
+async def ban (ctx, member:discord.User=None, *, reason =None):
     if member == None or member == ctx.message.author:
         await ctx.channel.send("You cannot ban yourself.. Just leave the server..")
         return
@@ -234,7 +230,6 @@ async def ban (ctx, member:discord.User=None, reason =None):
         reason = "For being a jerk!"
     message = f"You have been banned from {ctx.guild.name} for {reason}"
     await member.send(message)
-    # await ctx.guild.ban(member, reason=reason)
     ban_embed = discord.Embed(colour = discord.Colour.red()
     )
     ban_embed.add_field(name="Banned!",value=f"{member} was banned from {ctx.guild.name} for {reason}!")
@@ -259,13 +254,16 @@ async def unban(ctx, *, member):
 
         if (user.name, user.discriminator) == (member_name, member_discriminator):
             await ctx.guild.unban(user)
-            await ctx.send(f'Unbanned {user.mention}')
+            unban_embed = discord.Embed(colour = discord.Colour.green()
+            )
+            unban_embed.add_field(name="Unbanned!",value=f"{user} has been unbanned!")
+            ctx.send(embed=unban_embed)
             return
 
 # Kick Command
 @bot.command()
 @commands.has_permissions(kick_members = True)
-async def kick (ctx, member:discord.User=None, reason =None):
+async def kick (ctx, member:discord.User=None, *, reason =None):
     if member == None or member == ctx.message.author:
         await ctx.channel.send("You cannot kick yourself.. Just leave the server..")
         return
@@ -280,21 +278,96 @@ async def kick (ctx, member:discord.User=None, reason =None):
     await ctx.send(embed=kick_embed)
     await member.kick(reason = reason)
 
-# Help Command 
+# CoinFlip Command
+@bot.command(aliases=['cf','coin'])
+async def coinflip(ctx):
+  coinsides = ['Heads', 'Tails']
+  await ctx.send(f"**{ctx.author.name}** flipped a coin and got **{random.choice(coinsides)}**!")
+
+# Nuke Command
+@bot.command()
+@commands.has_permissions(administrator = True)
+async def nuke(ctx, channel: discord.TextChannel = None):
+    if channel == None: 
+        await ctx.send("You did not mention a channel!")
+        return
+
+    nuke_channel = discord.utils.get(ctx.guild.channels, name=channel.name)
+
+    if nuke_channel is not None:
+        new_channel = await nuke_channel.clone(reason="Has been Nuked!")
+        await nuke_channel.delete()
+        await new_channel.send("THIS CHANNEL HAS BEEN NUKED!")
+        await ctx.send("Nuked the Channel sucessfully!")
+
+    else:
+        await ctx.send(f"No channel named {channel.name} was found!")
+
+# Random Integer Command
+@bot.command()
+async def randint(ctx):
+    def check(msg):
+        return msg.author == ctx.author and msg.content.isdigit() and \
+               msg.channel == ctx.channel
+
+    await ctx.send("Type a number.")
+    msg1 = await bot.wait_for("message", check=check)
+    await ctx.send("Type a second, larger number.")
+    msg2 = await bot.wait_for("message", check=check)
+    x = int(msg1.content)
+    y = int(msg2.content)
+    if x < y:
+        value = random.randint(x,y)
+        await ctx.send(f"You got {value}.")
+    else:
+        await ctx.send(":warning: Please ensure the first number is smaller than the second number.")
+
+# Help Commands
 @bot.command()
 async def help(ctx):
   author = ctx.message.author
 
-  help_embed = discord.Embed(colour = discord.Colour.red()
+  help_tableofcontents_embed = discord.Embed(colour = discord.Colour.blue()
   )
-  help_embed.set_author(name="BOT PREFIX = t!")
-  help_embed.add_field(name="Help",value="Displays this message!", inline=False)
-  help_embed.add_field(name="Ping",value="Returns the amount of ping for the Bot!", inline=False)
-  help_embed.add_field(name="Snipe",value="Tells you the last deleted message!", inline=False)
-  help_embed.add_field(name="Purge", value="Purges the Chat!", inline=False)
-  help_embed.add_field(name="Say", value="Forces the Bot to say Something!", inline=False)
-  help_embed.add_field(name="DaleYeah", value="Mysterious Command..", inline=False)
+  help_tableofcontents_embed.set_author(name="BOT PREFIX = t!")
+  help_tableofcontents_embed.add_field(name="1 - Moderation",value="Do t!h1 to figure out all of the Moderation Commands and what they do! Some of these commands require some permissions in order to be used!")
+  help_tableofcontents_embed.add_field(name="2 - Fun",value="Do t!h2 to figure out all of the Fun commands.")
+  help_tableofcontents_embed.set_footer(text="There are lots for Hidden Commands! Look on Toka's Github for the Bot's Code!")
 
-  await ctx.send(embed=help_embed)
+  await ctx.send(embed=help_tableofcontents_embed)
 
-bot.run('')
+# Help Command - Moderation
+@bot.command()
+async def h1(ctx):
+  author = ctx.message.author
+
+  mod_help = discord.Embed(colour = discord.Colour.red()
+  )
+  mod_help.set_author(name="Moderation Commands")
+  mod_help.add_field(name="Ban",value="Bans a Mentioned User.")
+  mod_help.add_field(name="Kick",value="Kicks a Mentioned User.")
+  mod_help.add_field(name="Purge",value="Purges the Chat.")
+  mod_help.add_field(name="Nuke",value="Nukes a Channel.(You may have to move the channel back to its original position)")
+  mod_help.add_field(name="UnBan", value="UnBans a User. (Format - BannedUser#0000)")
+  mod_help.add_field(name="Slowmode", value="Sets the slowmode in seconds.")
+  mod_help.add_field(name="SetNick", value="Sets a Nickname for another user!")
+
+  await ctx.send(embed=mod_help)
+
+# Help Command - Fun
+@bot.command()
+async def h2(ctx):
+  author = ctx.message.author
+
+  fun_help = discord.Embed(colour = discord.Colour.green()
+  )
+  fun_help.set_author(name="Fun Commands")
+  fun_help.add_field(name="Say",value="Forces the bot to say things against it's will.")
+  fun_help.add_field(name="RickRoll",value="We/'re no strangers to love, You know the Rules and so do I, A full commitment is what I'm thinking of... RickRoll someone!")
+  fun_help.add_field(name="RPS",value="Play Rock Paper Scissors with this Bot. (There are some bugs)")
+  fun_help.add_field(name="RandInt", value="Choose 2 numbers and generate a Random Number between both of them.")
+  fun_help.add_field(name="CoinFlip", value="Flips a Coin for you!")
+
+  await ctx.send(embed=fun_help)
+
+bot.run('ODA2OTIxMjAzMjk0MDExNDgz.YBwd7g.04OQA0kGWwdfGEB8aMsWGsCQE5I')
