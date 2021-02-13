@@ -7,6 +7,7 @@ import os
 import asyncio
 from itertools import cycle
 from io import BytesIO
+import keep_alive
 
 bot = commands.Bot(command_prefix="t!")
 bot.sniped_messages = {}
@@ -63,6 +64,8 @@ async def on_ready():
   print("This Bot is Up and Running!")
   await bot.change_presence(status=discord.Status.online)
   change_status.start()
+
+keep_alive.keep_alive()
 
 @tasks.loop(seconds=5)
 async def change_status():
@@ -153,7 +156,7 @@ async def rickroll(ctx, arg):
   await ctx.send(f'You\'ve Been RickRolled by {ctx.message.author.mention}, {arg}!')
   await ctx.send('https://media4.giphy.com/media/Vuw9m5wXviFIQ/giphy.gif')
 
-# Kis Command
+# Kiss Command
 @bot.command()
 async def kiss(ctx, arg):
   await ctx.send(f'{ctx.message.author.mention} has given a kiss to {arg}!')
@@ -204,7 +207,7 @@ async def rps(ctx):
 # Nick Command
 @bot.command(pass_context=True)
 @commands.has_permissions(manage_nicknames=True)
-async def setnick(ctx, member: discord.Member, nick):
+async def setnick(ctx, member: discord.Member, *, nick):
     await member.edit(nick=nick)
     await ctx.send(f'Nickname was changed for {member.mention} ')
 
@@ -322,6 +325,88 @@ async def randint(ctx):
     else:
         await ctx.send(":warning: Please ensure the first number is smaller than the second number.")
 
+
+    
+# Welcome and Leave
+@bot.event
+async def on_member_join(member: discord.Member):
+    join_embed = discord.Embed(
+        color = discord.Color.magenta(),
+    )
+    join_embed.set_author(name="Welcome!")
+    join_embed.add_field(name=f"Welcome to {member.guild.name}! Make sure to Read The Rules! Failure to follow the Rules will result in punishments.")
+    join_embed.set_thumbnail(url="https://media.discordapp.net/attachments/774404924075016232/809127716690984980/image0.png?width=452&height=452")
+    await member.send(embed=join_embed)
+
+# Avatar Command
+@bot.command()
+async def avatar(ctx, *,  avamember : discord.Member=None):
+    userAvatarUrl = avamember.avatar_url
+
+    av_embed = discord.Embed(colour = discord.Colour.blurple()
+    )
+    av_embed.set_image(url=userAvatarUrl)
+    await ctx.send(embed=av_embed)
+
+# 8ball Command
+@bot.command(aliases=['8ball'])
+async def _8ball(ctx, *, question):
+  responses = [
+    "It is certain.",
+    "It is decidedly so.",
+    "Without a doubt.",
+    "Yes - definitely.",
+    "You may rely on it.",
+    "As I see it, yes.",
+    "Most likely.",
+    "Outlook good.",
+    "Yes.",
+    "Signs point to yes.",
+    "Reply hazy, try again.",
+    "Ask again later.",
+    "Better not tell you now.",
+    "Cannot predict now.",
+    "Concentrate and ask again.",
+    "Don't count on it.",
+    "My reply is no.",
+    "My sources say no.",
+    "Outlook not so good.",
+    "Very doubtful."
+  ]
+  _8ball = discord.Embed(colour=discord.Colour.greyple()
+  )
+  _8ball.set_author(name="The Magical EightBall!")
+  _8ball.add_field(name="Question:", value=f"{question}")
+  _8ball.add_field(name="Answer:", value=f"{random.choice(responses)}")
+  await ctx.send(embed=_8ball)
+
+# Dice Command
+@bot.command()
+async def roll(ctx, sides, amount):
+  try:
+    sides = int(sides.split("d")[1])
+    rolls_list = []
+    for number in range(int(amount)):
+       # 1 is the minimum number the dice can have
+       rolls_list.append(random.randint(1, sides))
+    rolls = ", ".join(str(number) for number in rolls_list)
+    await ctx.send("Your dice rolls were: " + rolls)
+  except Exception as e:
+    # You should catch different exceptions for each problem and then handle them
+    # Exception is too broad
+    print(e)
+    await ctx.send("Incorrect format for sides of dice (try something like \"t!roll d6 1\").")
+
+# Invite Link
+@bot.command()
+async def invite(ctx):
+  invite_em = discord.Embed(colour = discord.Colour.blurple()
+  )
+  invite_em.set_author(name="Invite Me To Your Server!",url="https://discord.com/api/oauth2/authorize?client_id=806921203294011483&permissions=1547037942&scope=bot")
+  invite_em.add_field(name="Link",value="https://discord.com/api/oauth2/authorize?client_id=806921203294011483&permissions=1547037942&scope=bot")
+
+  await ctx.send(embed=invite_em)
+
 # Help Commands
 @bot.command()
 async def help(ctx):
@@ -348,9 +433,10 @@ async def h1(ctx):
   mod_help.add_field(name="Kick",value="Kicks a Mentioned User.")
   mod_help.add_field(name="Purge",value="Purges the Chat.")
   mod_help.add_field(name="Nuke",value="Nukes a Channel.(You may have to move the channel back to its original position)")
-  mod_help.add_field(name="UnBan", value="UnBans a User. (Format - BannedUser#0000)")
+  mod_help.add_field(name="Unban", value="UnBans a User. (Format - BannedUser#0000)")
   mod_help.add_field(name="Slowmode", value="Sets the slowmode in seconds.")
   mod_help.add_field(name="SetNick", value="Sets a Nickname for another user!")
+  mod_help.add_field(name="Avatar", value="Display's A User's Avatar!")
 
   await ctx.send(embed=mod_help)
 
@@ -367,7 +453,6 @@ async def h2(ctx):
   fun_help.add_field(name="RPS",value="Play Rock Paper Scissors with this Bot. (There are some bugs)")
   fun_help.add_field(name="RandInt", value="Choose 2 numbers and generate a Random Number between both of them.")
   fun_help.add_field(name="CoinFlip", value="Flips a Coin for you!")
-
+  fun_help.add_field(name="8ball", value="Ask the Magical Eightball a Question!🎱")
+  fun_help.add_field(name="Dice", value="Rolls a Dice with a specified amount of sides, and multiple dices. Example - t!roll d6 1. In this, you are rolling one six sided die.")
   await ctx.send(embed=fun_help)
-
-bot.run('bottoken')
