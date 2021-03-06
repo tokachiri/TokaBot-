@@ -8,6 +8,13 @@ import asyncio
 from itertools import cycle
 from io import BytesIO
 import keep_alive
+import praw
+
+reddit = praw.Reddit(client_id='',
+                     client_secret='',
+                     username='',
+                     password='',
+                     user_agent='')
 
 bot = commands.Bot(command_prefix="t!")
 bot.sniped_messages = {}
@@ -41,23 +48,17 @@ dice = [
 status = cycle(["t!help | Made by Toka#8008",
                 "t!help | Stop Reading This Status.",
                 "t!help | 😏",
-                "t!help | Child Friendly Since 1976!",
                 "t!help | There are Secret Commands!",
                 "t!help | This Bot is Terr- I mean Awesome!",
-                "t!help | Oh no.. They're coming.. Hel-",
-                "t!help | Please Pay my Ransom..",
-                "t!help | Hacking Discord Since 1991!",
                 "t!help | This Bot was Written in Python!",
                 "t!help | OwO",
                 "t!help | ZzzzzzZzzzzZzzz",
                 "t!help | Who Woke me Up From My Nap!",
                 "t!help | Don't Question Me.",
-                "t!help | Ruffles Was Here B)",
-                "t!help | Dale Yeah!",
                 "t!help | Quack!",
-                "t!help | Landen is Bald!",
                 "t!help | w o w",
              ])
+
 
 @bot.event
 async def on_ready():
@@ -65,22 +66,18 @@ async def on_ready():
   await bot.change_presence(status=discord.Status.online)
   change_status.start()
 
+
 keep_alive.keep_alive()
 
 @tasks.loop(seconds=5)
 async def change_status():
     await bot.change_presence(activity=discord.Game(next(status)))
 
-@bot.event
-async def on_member_join(member):
-    role = discord.utils.get(member.server.roles, id="795786263353229352")
-    await bot.add_roles(member, role)
-
 # Snipe Command
 
 @bot.event
 async def on_message_delete(message):
-    bot.sniped_messages[message.guild.id] = (message.content, message.author,
+    bot.sniped_messages[message.guild.id] = (message.content,                                           message.author,
                                              message.channel.name,
                                              message.created_at)
 
@@ -182,27 +179,33 @@ async def rps(ctx):
     comp_choice = random.choice(rpsGame)
     if user_choice == 'rock' or 'Rock':
         if comp_choice == 'rock':
-            await ctx.send(f'Well, that was weird. We tied.\nYour choice: {user_choice}\nMy choice: {comp_choice}')
+            await ctx.send(f'Well, that was weird. We tied.')
         elif comp_choice == 'paper':
-            await ctx.send(f'Nice try, but I won that time!!\nYour choice: {user_choice}\nMy choice: {comp_choice}')
+            await ctx.send(f'Nice try, but I won that time!!')
         elif comp_choice == 'scissors':
-            await ctx.send(f"Aw, you beat me. It won't happen again!\nYour choice: {user_choice}\nMy choice: {comp_choice}")
+            await ctx.send(f"Aw, you beat me. It won't happen again!")
 
     elif user_choice == 'paper' or 'Paper':
         if comp_choice == 'rock':
-            await ctx.send(f'The pen beats the sword? More like the paper beats the rock!!\nYour choice: {user_choice}\nMy choice: {comp_choice}')
+            await ctx.send(f'The pen beats the sword? More like the paper beats the rock!')
         elif comp_choice == 'paper':
-            await ctx.send(f'Oh, wacky. We just tied. I call a rematch!!\nYour choice: {user_choice}\nMy choice: {comp_choice}')
+            await ctx.send(f'Oh, wacky. We just tied. I call a rematch!!')
         elif comp_choice == 'scissors':
-            await ctx.send(f"Aw man, you actually managed to beat me.\nYour choice: {user_choice}\nMy choice: {comp_choice}")
+            await ctx.send(f"Aw man, you actually managed to beat me.")
 
     elif user_choice == 'scissors' or 'Scissors':
         if comp_choice == 'rock':
-            await ctx.send(f'HAHA!! I JUST CRUSHED YOU!! I rock!!\nYour choice: {user_choice}\nMy choice: {comp_choice}')
+            await ctx.send(f'HAHA!! I JUST CRUSHED YOU!! I rock!!')
         elif comp_choice == 'paper':
-            await ctx.send(f'Bruh. >: |\nYour choice: {user_choice}\nMy choice: {comp_choice}')
+            await ctx.send(f'Bruh. >: |')
         elif comp_choice == 'scissors':
-            await ctx.send(f"Oh well, we tied.\nYour choice: {user_choice}\nMy choice: {comp_choice}")       
+            await ctx.send(f"Oh well, we tied.")   
+    rps_choices = discord.Embed(colour = discord.Colour.red()
+    )
+    rps_choices.set_author(name="Rock, Paper, Scissors Results:")
+    rps_choices.add_field(name="Computer Choice -", value=f"{comp_choice}")
+    rps_choices.add_field(name="Your Choice -", value=f"{user_choice}")
+    await ctx.send(embed=rps_choices)
 
 # Nick Command
 @bot.command(pass_context=True)
@@ -218,6 +221,7 @@ async def setnick_error(ctx, error):
 
 # Slowmode Command
 @bot.command()
+@commands.has_permissions(manage_channels=True)
 async def slowmode(ctx, seconds: int):
     await ctx.channel.edit(slowmode_delay=seconds)
     await ctx.send(f"Set the slowmode delay in this channel to {seconds} seconds!")
@@ -236,6 +240,7 @@ async def ban (ctx, member:discord.User=None, *, reason =None):
     ban_embed = discord.Embed(colour = discord.Colour.red()
     )
     ban_embed.add_field(name="Banned!",value=f"{member} was banned from {ctx.guild.name} for {reason}!")
+    await ctx.channel.purge(limit=1)
     await ctx.send(embed=ban_embed)
     await member.ban(reason = reason)
 
@@ -278,6 +283,7 @@ async def kick (ctx, member:discord.User=None, *, reason =None):
     kick_embed = discord.Embed(colour = discord.Colour.red()
     )
     kick_embed.add_field(name="Kicked!",value=f"{member} was kicked from {ctx.guild.name} for {reason}!")
+    await ctx.channel.purge(limit=1)
     await ctx.send(embed=kick_embed)
     await member.kick(reason = reason)
 
@@ -286,25 +292,6 @@ async def kick (ctx, member:discord.User=None, *, reason =None):
 async def coinflip(ctx):
   coinsides = ['Heads', 'Tails']
   await ctx.send(f"**{ctx.author.name}** flipped a coin and got **{random.choice(coinsides)}**!")
-
-# Nuke Command
-@bot.command()
-@commands.has_permissions(administrator = True)
-async def nuke(ctx, channel: discord.TextChannel = None):
-    if channel == None: 
-        await ctx.send("You did not mention a channel!")
-        return
-
-    nuke_channel = discord.utils.get(ctx.guild.channels, name=channel.name)
-
-    if nuke_channel is not None:
-        new_channel = await nuke_channel.clone(reason="Has been Nuked!")
-        await nuke_channel.delete()
-        await new_channel.send("THIS CHANNEL HAS BEEN NUKED!")
-        await ctx.send("Nuked the Channel sucessfully!")
-
-    else:
-        await ctx.send(f"No channel named {channel.name} was found!")
 
 # Random Integer Command
 @bot.command()
@@ -407,6 +394,82 @@ async def invite(ctx):
 
   await ctx.send(embed=invite_em)
 
+# Server-Info Command
+@bot.command()
+async def serverinfo(ctx):
+  name = str(ctx.guild.name)
+  description = str(ctx.guild.description)
+
+  owner = str(ctx.guild.owner)
+  id = str(ctx.guild.id)
+  region = str(ctx.guild.region)
+  memberCount = str(ctx.guild.member_count)
+
+  icon = str(ctx.guild.icon_url)
+   
+  embed = discord.Embed(
+      title=name + " Server Information",
+      description=description,
+      color=discord.Color.blue()
+    )
+  embed.set_thumbnail(url=icon)
+  embed.add_field(name="Owner", value=owner, inline=True)
+  embed.add_field(name="Server ID", value=id, inline=True)
+  embed.add_field(name="Region", value=region, inline=True)
+  embed.add_field(name="Member Count", value=memberCount, inline=True)
+
+  await ctx.send(embed=embed)
+
+@bot.command(aliases=["whois"])
+async def userinfo(ctx, member: discord.Member = None):
+    if not member:  # if member is no mentioned
+        member = ctx.message.author  # set member as the author
+    roles = [role for role in member.roles]
+    embed = discord.Embed(colour=discord.Colour.purple(), timestamp=ctx.message.created_at,
+                          title=f"User Info - {member}")
+    embed.set_thumbnail(url=member.avatar_url)
+    embed.set_footer(text=f"Requested by {ctx.author}")
+
+    embed.add_field(name="ID:", value=member.id)
+    embed.add_field(name="Display Name:", value=member.display_name)
+
+    embed.add_field(name="Created Account On:", value=member.created_at.strftime("%a, %#d %B %Y, %I:%M %p UTC"))
+    embed.add_field(name="Joined Server On:", value=member.joined_at.strftime("%a, %#d %B %Y, %I:%M %p UTC"))
+
+    embed.add_field(name="Roles:", value="".join([role.mention for role in roles]))
+    embed.add_field(name="Highest Role:", value=member.top_role.mention)
+    print(member.top_role.mention)
+    await ctx.send(embed=embed)
+
+@bot.command()
+async def aww(ctx):
+    subreddit = reddit.subreddit("Aww")
+    all_subs = []
+    top = subreddit.top(limit=100)
+    for submission in top:
+        all_subs.append(submission)
+    random_sub = random.choice(all_subs)
+    name = random_sub.title
+    url = random_sub.url
+    em = discord.Embed(title=name)
+    em.set_image(url=url)
+    await ctx.send(embed=em)
+
+@bot.command()
+async def meme(ctx):
+    subreddit = reddit.subreddit("dankmemes")
+    all_subs = []
+    top = subreddit.top(limit=100)
+    for submission in top:
+        all_subs.append(submission)
+    random_sub = random.choice(all_subs)
+    name = random_sub.title
+    url = random_sub.url
+    em = discord.Embed(title=name)
+    em.set_image(url=url)
+    await ctx.send(embed=em)
+
+
 # Help Commands
 @bot.command()
 async def help(ctx):
@@ -417,12 +480,13 @@ async def help(ctx):
   help_tableofcontents_embed.set_author(name="BOT PREFIX = t!")
   help_tableofcontents_embed.add_field(name="1 - Moderation",value="Do t!h1 to figure out all of the Moderation Commands and what they do! Some of these commands require some permissions in order to be used!")
   help_tableofcontents_embed.add_field(name="2 - Fun",value="Do t!h2 to figure out all of the Fun commands.")
+  help_tableofcontents_embed.add_field(name="3 = Pictures",value="Do t!h3 to figure out all of the image commands!")
   help_tableofcontents_embed.set_footer(text="There are lots for Hidden Commands! Look on Toka's Github for the Bot's Code!")
 
   await ctx.send(embed=help_tableofcontents_embed)
 
 # Help Command - Moderation
-@bot.command()
+@bot.command(aliases=['mod','moderation','Moderation','Mod'])
 async def h1(ctx):
   author = ctx.message.author
 
@@ -432,7 +496,6 @@ async def h1(ctx):
   mod_help.add_field(name="Ban",value="Bans a Mentioned User.")
   mod_help.add_field(name="Kick",value="Kicks a Mentioned User.")
   mod_help.add_field(name="Purge",value="Purges the Chat.")
-  mod_help.add_field(name="Nuke",value="Nukes a Channel.(You may have to move the channel back to its original position)")
   mod_help.add_field(name="Unban", value="UnBans a User. (Format - BannedUser#0000)")
   mod_help.add_field(name="Slowmode", value="Sets the slowmode in seconds.")
   mod_help.add_field(name="SetNick", value="Sets a Nickname for another user!")
@@ -441,7 +504,7 @@ async def h1(ctx):
   await ctx.send(embed=mod_help)
 
 # Help Command - Fun
-@bot.command()
+@bot.command(aliases=['fun','Fun'])
 async def h2(ctx):
   author = ctx.message.author
 
@@ -456,3 +519,17 @@ async def h2(ctx):
   fun_help.add_field(name="8ball", value="Ask the Magical Eightball a Question!🎱")
   fun_help.add_field(name="Dice", value="Rolls a Dice with a specified amount of sides, and multiple dices. Example - t!roll d6 1. In this, you are rolling one six sided die.")
   await ctx.send(embed=fun_help)
+
+# Help Command - Pictures
+@bot.command(aliases=['Pics','pics','Pictures','pictures','memes'])
+async def h3(ctx):
+  author = ctx.message.author
+
+  memes_help = discord.Embed(colour = discord.Colour.orange()
+  )
+  memes_help.set_author(name="Picture Commands")
+  memes_help.add_field(name="Meme",value="Pulls a DankMeme from r/dankememes.")
+  memes_help.add_field(name="Aww",value="Pulls a cute picture from r/awww.")
+
+  await ctx.send(embed=memes_help)
+bot.run('BOT TOKEN UWU')
