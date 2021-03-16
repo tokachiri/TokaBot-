@@ -1,4 +1,4 @@
 # TokaBot-
 TokaBot. One of the Wor- I mean Best discord bots!
 
-All you have to do to use this bot is make a discord bot in the dev portal. Then open your IDE of choice and paste your token at the bottom. EZ PZ now you have an ass cheeks bot :)
+Please When Forking the Code of this bot over, make the code public so others  can see the changes that you made (-u-)b. Also leave some of the credits please :)
